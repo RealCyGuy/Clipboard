@@ -5,10 +5,12 @@ from discord.ext import commands
 from discord.ext import tasks
 
 import asyncio
-import motor
+from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import json
 from colorama import Fore, Back, Style
+
+from core.signals import Signals
 
 with open(os.path.join(os.path.dirname(__file__), "config.json"), "r") as f:
     config = json.load(f)
@@ -20,12 +22,16 @@ class ClipboardBot(commands.Bot):
         super().__init__(command_prefix=command_prefix, *args, **kwargs)
         self.loading_cogs = ["cogs.clipboard", "cogs.misc"]
         self.help_command = commands.DefaultHelpCommand()
+        mongo_uri = config.get("mongo_uri", None)
+        if mongo_uri is None or len(mongo_uri.strip()) == 0:
+            print("\n" + Signals.FATAL + "A Mongo URI is necessary for the bot to function.\n")
+            raise RuntimeError
         self.startup()
 
     async def on_ready(self):
         print('-' * 24)
         print('Logged in as:')
-        print(Fore.LIGHTMAGENTA_EX + bot.user.name + "#" + bot.user.discriminator + Style.RESET_ALL)
+        print(Fore.LIGHTMAGENTA_EX + bot.user.name + "#" + bot.user.discriminator + Fore.RESET)
         print("Id: " + str(bot.user.id))
         print(f"Discord version: {Fore.CYAN}{discord.__version__}{Style.RESET_ALL}")
         print(f"Bot version: {Fore.CYAN}{__version__}{Style.RESET_ALL}")
@@ -46,10 +52,11 @@ class ClipboardBot(commands.Bot):
                 print(e)
 
 
-@tasks.loop(minutes=2.0)
+@tasks.loop(seconds=10.0)
 async def status_update(the_bot):
     if the_bot.is_ready():
-        text = "🚧Nothing🚧"
+        copied = 5
+        text = f"{copied} copied to clipboard! | In {len(bot.guilds)} servers."
 
         old_text = ""
         try:
@@ -57,13 +64,20 @@ async def status_update(the_bot):
         except (IndexError, AttributeError, TypeError):
             pass
         if text != old_text:
+            print(f"Changing status to: Watching {text}")
             try:
                 await the_bot.change_presence(activity=discord.Activity(name=text, type=discord.ActivityType.watching))
-                print(f"Changing status to: {text.replace(' ', ' ')}")
+                print(Signals.SUCCESS + "Changed status.")
             except Exception as e:
                 print(f"Failed to update status: {type(e).__name__}")
 
 
 bot = ClipboardBot()
 status_update.start(bot)
-bot.run(config["token"])
+
+token = config.get("token", None)
+if token is None or len(token.strip()) == 0:
+    print("\n" + Signals.FATAL + "A bot token is necessary for the bot to function.\n")
+    raise RuntimeError
+else:
+    bot.run(token)

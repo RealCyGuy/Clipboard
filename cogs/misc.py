@@ -14,7 +14,7 @@ class Misc(commands.Cog):
         invite = f"https://discordapp.com/api/oauth2/authorize?client_id={self.bot.user.id}&permissions=67584&scope=bot"
         await ctx.send(embed=discord.Embed(
             color=discord.colour.Colour.teal(),
-            description=f"[Invite]({invite}) me to your server!"))
+            description=f":mailbox_with_mail: [Invite]({invite}) me to your server!"))
 
 
 def setup(bot):

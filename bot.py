@@ -6,8 +6,10 @@ from discord.ext import tasks
 
 import asyncio
 from motor.motor_asyncio import AsyncIOMotorClient
+
 import os
 import json
+import dns
 from colorama import Fore, Back, Style
 
 from core.signals import Signals
@@ -26,6 +28,9 @@ class ClipboardBot(commands.Bot):
         if mongo_uri is None or len(mongo_uri.strip()) == 0:
             print("\n" + Signals.FATAL + "A Mongo URI is necessary for the bot to function.\n")
             raise RuntimeError
+
+        self.db = AsyncIOMotorClient(mongo_uri).clipboard_bot
+
         self.startup()
 
     async def on_ready(self):
@@ -48,28 +53,28 @@ class ClipboardBot(commands.Bot):
                 self.load_extension(cog)
                 print(f"{Fore.LIGHTGREEN_EX}Successfully loaded {cog}.{Style.RESET_ALL}")
             except Exception as e:
-                print(f"{Fore.RED}Failed to load {cog}.{Style.RESET_ALL}")
-                print(e)
+                print(f"{Fore.RED}Failed to load {cog}.{Style.RESET_ALL} Error type: {type(e).__name__}")
 
 
 @tasks.loop(seconds=10.0)
 async def status_update(the_bot):
     if the_bot.is_ready():
-        copied = 5
-        text = f"{copied} copied to clipboard! | In {len(bot.guilds)} servers."
+        copied = 6
+        text = f"{copied} copied to clipboard!"
 
         old_text = ""
         try:
             old_text = the_bot.guilds[0].me.activity.name
         except (IndexError, AttributeError, TypeError):
             pass
+        print("Old: " + old_text)
         if text != old_text:
             print(f"Changing status to: Watching {text}")
             try:
                 await the_bot.change_presence(activity=discord.Activity(name=text, type=discord.ActivityType.watching))
                 print(Signals.SUCCESS + "Changed status.")
             except Exception as e:
-                print(f"Failed to update status: {type(e).__name__}")
+                print(f"{Signals.ERROR}Failed to update status: {type(e).__name__} {e}")
 
 
 bot = ClipboardBot()

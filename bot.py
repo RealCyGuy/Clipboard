@@ -30,6 +30,7 @@ class ClipboardBot(commands.Bot):
             raise RuntimeError
 
         self.db = AsyncIOMotorClient(mongo_uri).clipboard_bot
+        self.clipboard = self.db.clipboard
 
         self.startup()
 
@@ -59,7 +60,16 @@ class ClipboardBot(commands.Bot):
 @tasks.loop(seconds=10.0)
 async def status_update(the_bot):
     if the_bot.is_ready():
-        copied = 6
+        new_clipboard = await the_bot.clipboard.find_one({"_id": "clipboard"})
+        if new_clipboard is None:
+            await the_bot.clipboard.find_one_and_update(
+            {"_id": "clipboard"},
+            {"$set": {"copied": dict()}},
+            upsert=True,
+            )
+            new_clipboard = await the_bot.clipboard.find_one({"_id": "clipboard"})
+
+        copied = len(new_clipboard["copied"])
         text = f"{copied} copied to clipboard!"
 
         old_text = ""
@@ -67,7 +77,6 @@ async def status_update(the_bot):
             old_text = the_bot.guilds[0].me.activity.name
         except (IndexError, AttributeError, TypeError):
             pass
-        print("Old: " + old_text)
         if text != old_text:
             print(f"Changing status to: Watching {text}")
             try:

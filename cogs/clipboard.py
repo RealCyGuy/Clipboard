@@ -8,7 +8,6 @@ class Clipboard(commands.Cog):
 
     @commands.command()
     async def say(self, ctx, *, message):
-        """Simple say command."""
         await ctx.send(message.replace("@everyone", "@\u200beveryone").replace("@here", "@\u200bhere"))
         await ctx.message.delete()
 

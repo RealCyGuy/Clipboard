@@ -23,7 +23,7 @@ class ClipboardBot(commands.Bot):
         command_prefix = commands.when_mentioned_or("clip!")
         super().__init__(command_prefix=command_prefix, *args, **kwargs)
         self.loading_cogs = ["cogs.clipboard", "cogs.misc"]
-        self.help_command = commands.DefaultHelpCommand()
+        self.remove_command("help")
         mongo_uri = config.get("mongo_uri", None)
         if mongo_uri is None or len(mongo_uri.strip()) == 0:
             print("\n" + Signals.FATAL + "A Mongo URI is necessary for the bot to function.\n")

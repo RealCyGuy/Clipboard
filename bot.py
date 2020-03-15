@@ -1,4 +1,4 @@
-__version__ = "1.0.0"
+__version__ = "1.0.0 beta"
 
 import discord
 from discord.ext import commands
@@ -10,7 +10,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import json
 import dns
-from colorama import Fore, Back, Style
+from colorama import Fore, Style
 
 from core.signals import Signals
 
@@ -20,10 +20,11 @@ with open(os.path.join(os.path.dirname(__file__), "config.json"), "r") as f:
 
 class ClipboardBot(commands.Bot):
     def __init__(self, *args, **kwargs):
-        command_prefix = commands.when_mentioned_or("clip!")
+        command_prefix = ["c!"]
         super().__init__(command_prefix=command_prefix, *args, **kwargs)
         self.loading_cogs = ["cogs.clipboard", "cogs.misc"]
         self.remove_command("help")
+        self.activity = discord.Game("\u200b")
         mongo_uri = config.get("mongo_uri", None)
         if mongo_uri is None or len(mongo_uri.strip()) == 0:
             print("\n" + Signals.FATAL + "A Mongo URI is necessary for the bot to function.\n")
@@ -43,6 +44,11 @@ class ClipboardBot(commands.Bot):
         print(f"Bot version: {Fore.CYAN}{__version__}{Style.RESET_ALL}")
         print('-' * 24)
 
+    async def on_message(self, message):
+        if self.user.mentioned_in(message):
+            await message.channel.send("My prefix is `c!`. Use `c!help` for help.")
+        await self.process_commands(message)
+
     def startup(self):
         print('=' * 24)
         print("Clipboard")
@@ -57,33 +63,36 @@ class ClipboardBot(commands.Bot):
                 print(f"{Fore.RED}Failed to load {cog}.{Style.RESET_ALL} Error type: {type(e).__name__}")
 
 
-@tasks.loop(seconds=10.0)
+@tasks.loop(minutes=1.0)
 async def status_update(the_bot):
     if the_bot.is_ready():
         new_clipboard = await the_bot.clipboard.find_one({"_id": "clipboard"})
         if new_clipboard is None:
             await the_bot.clipboard.find_one_and_update(
-            {"_id": "clipboard"},
-            {"$set": {"copied": dict()}},
-            upsert=True,
+                {"_id": "clipboard"},
+                {"$set": {"copied": dict()}},
+                upsert=True,
             )
             new_clipboard = await the_bot.clipboard.find_one({"_id": "clipboard"})
 
         copied = len(new_clipboard["copied"])
-        text = f"{copied} copied to clipboard!"
+        text = f"{copied} copied to clipboard!\nVersion {__version__}"
 
         old_text = ""
         try:
             old_text = the_bot.guilds[0].me.activity.name
-        except (IndexError, AttributeError, TypeError):
+        except:
             pass
         if text != old_text:
-            print(f"Changing status to: Watching {text}")
+            print(Fore.CYAN + "=" * 24 + Fore.RESET)
+            print(f"Changing status to:\nWatching {text}")
+            print(Fore.MAGENTA + "-" * 24 + Fore.RESET)
+            print(Fore.CYAN + "=" * 24 + Fore.RESET)
             try:
                 await the_bot.change_presence(activity=discord.Activity(name=text, type=discord.ActivityType.watching))
-                print(Signals.SUCCESS + "Changed status.")
+                print(f"{Signals.SUCCESS}Changed status.")
             except Exception as e:
-                print(f"{Signals.ERROR}Failed to update status: {type(e).__name__} {e}")
+                print(f"{Signals.ERROR}Failed to update status: {type(e).__name__}")
 
 
 bot = ClipboardBot()

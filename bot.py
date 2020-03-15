@@ -85,8 +85,9 @@ async def status_update(the_bot):
             pass
         if text != old_text:
             print(Fore.CYAN + "=" * 24 + Fore.RESET)
-            print(f"Changing status to:\nWatching {text}")
+            print("Changing status to:")
             print(Fore.MAGENTA + "-" * 24 + Fore.RESET)
+            print(f"Watching {text}")
             print(Fore.CYAN + "=" * 24 + Fore.RESET)
             try:
                 await the_bot.change_presence(activity=discord.Activity(name=text, type=discord.ActivityType.watching))

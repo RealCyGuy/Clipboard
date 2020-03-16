@@ -3,6 +3,7 @@ from discord.ext import commands
 
 import core.embeds as embeds
 
+
 class Misc(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -41,7 +42,13 @@ class Misc(commands.Cog):
 
     @commands.command(aliases=['commands'])
     async def help(self, ctx, *, command_name: str = None):
-        """The new help command"""
+        """
+        The new help command.
+        ~
+        {prefix}help\n{prefix}help copy
+        ~
+        What is up?
+        """
 
         # Get all the cogs
         if not command_name:
@@ -83,8 +90,21 @@ class Misc(commands.Cog):
 
         # Add commands to it
         if command_name:
-            help_embed.add_field(name=f"{self.get_used_prefix(ctx)}{base_command.qualified_name} {base_command.signature}",
-                                 value=base_command.help.replace("{prefix}", ctx.prefix))
+            help_embed.title = f"{self.get_used_prefix(ctx)}{base_command.qualified_name} {base_command.signature}"
+            description = base_command.help.split("~")
+            help_embed.add_field(name="Description", value=description[0].replace("{prefix}", ctx.prefix))
+            help_embed.add_field(name="Usage",
+                                 value="```" + description[1].strip("\n ").replace("{prefix}", ctx.prefix) + "```")
+            try:
+                help_embed.add_field(name="Note", value=description[2].replace("{prefix}", ctx.prefix), inline=False)
+            except IndexError:
+                pass
+            if base_command.aliases:
+                aliases = "`" + "`, `".join(base_command.aliases) + "`"
+            else:
+                aliases = "No aliases."
+            help_embed.add_field(name="Aliases", value=aliases, inline=False)
+            help_embed.set_footer(text=f"Use {self.get_used_prefix(ctx)}help to see all the commands."+" "*30+"\u200b")
         for cog_commands in runnable_commands:
             value = '\n'.join(
                 [f"**{ctx.prefix}{command.qualified_name}** - *{command.short_doc}*" for command in cog_commands])
@@ -107,9 +127,13 @@ class Misc(commands.Cog):
             except:
                 await ctx.send(embed=embeds.error("I couldn't send you a DM."))
 
-    @commands.command()
+    @commands.command(aliases=["botplzplzplz", "letmehavebot", "iwant"])
     async def invite(self, ctx):
-        """Get the invite link of the bot."""
+        """
+        Get the invite link of the bot.
+        ~
+        {prefix}invite
+        """
         invite = f"https://discordapp.com/api/oauth2/authorize?client_id={self.bot.user.id}&permissions=67584&scope=bot"
         await ctx.send(embed=discord.Embed(
             color=discord.colour.Colour.teal(),

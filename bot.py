@@ -43,6 +43,7 @@ class ClipboardBot(commands.Bot):
         print(f"Discord version: {Fore.CYAN}{discord.__version__}{Style.RESET_ALL}")
         print(f"Bot version: {Fore.CYAN}{__version__}{Style.RESET_ALL}")
         print('-' * 24)
+        print(f"{Signals.SUCCESS}I am logged in and ready!")
 
     async def on_message(self, message):
         if self.user.mentioned_in(message):

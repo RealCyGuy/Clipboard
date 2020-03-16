@@ -47,17 +47,17 @@ class Misc(commands.Cog):
         ~
         {prefix}help\n{prefix}help copy
         ~
-        What is up?
+        Use `{prefix}help here` to send a list of commands into the channel (not DM).
         """
 
         # Get all the cogs
-        if not command_name:
+        if not command_name or command_name == "here":
             cogs = self.bot.cogs.values()
             cog_commands = [cog.get_commands() for cog in cogs]
 
         # Get the commands under a specific parent
         else:
-            command_name = command_name.lower()
+            command_name = command_name.lower().replace("c!", "")
             command = self.bot
             for i in command_name.split():
                 command = command.get_command(i)
@@ -89,7 +89,7 @@ class Misc(commands.Cog):
         help_embed.set_footer(text=f"Use {self.get_used_prefix(ctx)}help <command> to get help for a specific command.")
 
         # Add commands to it
-        if command_name:
+        if command_name and command_name != "here":
             help_embed.title = f"{self.get_used_prefix(ctx)}{base_command.qualified_name} {base_command.signature}"
             description = base_command.help.split("~")
             help_embed.add_field(name="Description", value=description[0].replace("{prefix}", ctx.prefix))
@@ -114,7 +114,6 @@ class Misc(commands.Cog):
                 value=value
             )
 
-        # Send it to the user
         if command_name:
             await ctx.send(embed=help_embed)
         else:

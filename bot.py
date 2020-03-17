@@ -47,7 +47,7 @@ class ClipboardBot(commands.Bot):
 
     async def on_message(self, message):
         if self.user.mentioned_in(message):
-            await message.channel.send("My prefix is `c!`. Use `c!help` for help.")
+            await message.channel.send("My prefix is `c!`")
         await self.process_commands(message)
 
     def startup(self):

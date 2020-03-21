@@ -13,6 +13,7 @@ import dns
 from colorama import Fore, Style
 
 from core.signals import Signals
+import core.embeds as embeds
 
 with open(os.path.join(os.path.dirname(__file__), "config.json"), "r") as f:
     config = json.load(f)
@@ -20,7 +21,7 @@ with open(os.path.join(os.path.dirname(__file__), "config.json"), "r") as f:
 
 class ClipboardBot(commands.Bot):
     def __init__(self, *args, **kwargs):
-        command_prefix = ["c!"]
+        command_prefix = commands.when_mentioned_or("c!")
         super().__init__(command_prefix=command_prefix, *args, **kwargs)
         self.loading_cogs = ["cogs.clipboard", "cogs.misc"]
         self.remove_command("help")
@@ -45,10 +46,16 @@ class ClipboardBot(commands.Bot):
         print('-' * 24)
         print(f"{Signals.SUCCESS}I am logged in and ready!")
 
-    async def on_message(self, message):
-        if self.user.mentioned_in(message):
-            await message.channel.send("My prefix is `c!`")
-        await self.process_commands(message)
+    async def get_clipboard(self):
+        new_clipboard = await self.clipboard.find_one({"_id": "clipboard"})
+        if new_clipboard is None:
+            await self.clipboard.find_one_and_update(
+                {"_id": "clipboard"},
+                {"$set": {"copied": dict()}},
+                upsert=True,
+            )
+            new_clipboard = await self.clipboard.find_one({"_id": "clipboard"})
+        return new_clipboard
 
     def startup(self):
         print('=' * 24)
@@ -63,20 +70,32 @@ class ClipboardBot(commands.Bot):
             except Exception as e:
                 print(f"{Fore.RED}Failed to load {cog}.{Style.RESET_ALL} Error type: {type(e).__name__}")
 
+    async def on_command_error(self, context, exception):
+        if isinstance(exception, commands.BadUnionArgument):
+            msg = "Could not find the specified " + str([c.__name__ for c in exception.converters])
 
-@tasks.loop(minutes=1.0)
+            await context.trigger_typing()
+            await context.send(embed=embeds.error(msg))
+
+        elif isinstance(exception, commands.BadArgument):
+            await context.trigger_typing()
+            await context.send(
+                embed=embeds.error(str(exception))
+            )
+        elif isinstance(exception, commands.CommandNotFound):
+            print("CommandNotFound: " + str(exception))
+        elif isinstance(exception, commands.MissingRequiredArgument):
+            await context.send(embed=embeds.error("Missing required arguments."))
+        else:
+            print("Unexpected exception: " + str(exception))
+
+
+@tasks.loop(seconds=1.0)
 async def status_update(the_bot):
     if the_bot.is_ready():
-        new_clipboard = await the_bot.clipboard.find_one({"_id": "clipboard"})
-        if new_clipboard is None:
-            await the_bot.clipboard.find_one_and_update(
-                {"_id": "clipboard"},
-                {"$set": {"copied": dict()}},
-                upsert=True,
-            )
-            new_clipboard = await the_bot.clipboard.find_one({"_id": "clipboard"})
+        clip_db = await the_bot.get_clipboard()
 
-        copied = len(new_clipboard["copied"])
+        copied = len(clip_db["copied"])
         text = f"{copied} copied to clipboard!\nVersion {__version__}"
 
         old_text = ""

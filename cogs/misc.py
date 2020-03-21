@@ -15,7 +15,7 @@ class Misc(commands.Cog):
             return ctx.prefix
 
     @commands.command(aliases=['commands'])
-    async def help(self, ctx, *, command_name: str = None):
+    async def help(self, ctx, *, command: str = None):
         """
         The new help command.
         ~
@@ -25,21 +25,20 @@ class Misc(commands.Cog):
         """
 
         # Get all the cogs
-        if not command_name or command_name == "here":
+        if not command or command == "here":
             cogs = self.bot.cogs.values()
             cog_commands = [cog.get_commands() for cog in cogs]
 
         # Get the commands under a specific parent
         else:
-            command_name = command_name.lower().replace("c!", "")
-            command = self.bot
-            for i in command_name.split():
-                command = command.get_command(i)
-                if not command:
-                    return await ctx.send(embed=embeds.error(f"The command `{command_name}` could not be found."))
-            base_command = command
-            if isinstance(command, commands.Group):
-                cog_commands = [list(set(command.walk_commands()))]
+            command = command.lower().replace("c!", "")
+            got_command = self.bot.get_command(command)
+            if not got_command:
+                return await ctx.send(embed=embeds.error(f"The command `{command}` could not be found."))
+            base_command = got_command
+
+            if isinstance(got_command, commands.Group):
+                cog_commands = [list(set(got_command.walk_commands()))]
             else:
                 cog_commands = []
 
@@ -47,8 +46,8 @@ class Misc(commands.Cog):
         runnable_commands = []
         for cog in cog_commands:
             visible_cog_commands = []
-            for command in cog:
-                visible_cog_commands.append(command)
+            for thecommand in cog:
+                visible_cog_commands.append(thecommand)
             visible_cog_commands.sort(key=lambda x: x.name.lower())  # Sort alphabetically
             if len(visible_cog_commands) > 0:
                 runnable_commands.append(visible_cog_commands)
@@ -63,7 +62,7 @@ class Misc(commands.Cog):
         help_embed.set_footer(text=f"Use {self.get_used_prefix(ctx)}help <command> to get help for a specific command.")
 
         # Add commands to it
-        if command_name and command_name != "here":
+        if command and command != "here":
             help_embed.title = f"{self.get_used_prefix(ctx)}{base_command.qualified_name} {base_command.signature}"
             description = base_command.help.split("~")
             help_embed.add_field(name="Description", value=description[0].replace("{prefix}", ctx.prefix))
@@ -88,7 +87,7 @@ class Misc(commands.Cog):
                 value=value
             )
 
-        if command_name:
+        if command:
             await ctx.send(embed=help_embed)
         else:
             try:

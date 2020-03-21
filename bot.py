@@ -98,11 +98,7 @@ async def status_update(the_bot):
         copied = len(clip_db["copied"])
         text = f"{copied} copied to clipboard!\nVersion {__version__}"
 
-        old_text = ""
-        try:
-            old_text = the_bot.guilds[0].me.activity.name
-        except:
-            pass
+        old_text = the_bot.guilds[0].me.activity.name
         if text != old_text:
             print(Fore.CYAN + "=" * 24 + Fore.RESET)
             print("Changing status to:")

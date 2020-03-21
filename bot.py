@@ -97,7 +97,7 @@ async def status_update(the_bot):
         clip_db = await the_bot.get_clipboard()
 
         copied = len(clip_db["copied"])
-        text = f"{copied} copied to clipboard!\nVersion {__version__}"
+        text = f"{copied} copied to clipboard! Version {__version__} | c!help"
 
         old_text = the_bot.guilds[0].me.activity.name
         if text != old_text:

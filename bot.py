@@ -15,8 +15,9 @@ from colorama import Fore, Style
 from core.signals import Signals
 import core.embeds as embeds
 
-with open(os.path.join(os.path.dirname(__file__), "config.json"), "r") as f:
-    config = json.load(f)
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 class ClipboardBot(commands.Bot):
@@ -26,7 +27,7 @@ class ClipboardBot(commands.Bot):
         self.loading_cogs = ["cogs.clipboard", "cogs.misc"]
         self.remove_command("help")
         self.activity = discord.Game("\u200b")
-        mongo_uri = config.get("mongo_uri", None)
+        mongo_uri = os.environ.get("MONGO_URI", None)
         if mongo_uri is None or len(mongo_uri.strip()) == 0:
             print("\n" + Signals.FATAL + "A Mongo URI is necessary for the bot to function.\n")
             raise RuntimeError
@@ -115,7 +116,7 @@ async def status_update(the_bot):
 bot = ClipboardBot()
 status_update.start(bot)
 
-token = config.get("token", None)
+token = os.environ.get("TOKEN", None)
 if token is None or len(token.strip()) == 0:
     print("\n" + Signals.FATAL + "A bot token is necessary for the bot to function.\n")
     raise RuntimeError

@@ -2,3 +2,4 @@ discord.py
 motor
 colorama
 dnspython
+python-dotenv

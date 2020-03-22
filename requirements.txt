@@ -3,3 +3,4 @@ motor
 colorama
 dnspython
 python-dotenv
+requests

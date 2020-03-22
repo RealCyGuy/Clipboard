@@ -1,7 +1,10 @@
 import discord
+from discord import Webhook, RequestsWebhookAdapter
 from discord.ext import commands
 
 import core.embeds as embeds
+
+import os
 
 
 class Misc(commands.Cog):
@@ -112,6 +115,24 @@ class Misc(commands.Cog):
         await ctx.send(embed=discord.Embed(
             color=discord.colour.Colour.teal(),
             description=f":mailbox_with_mail: [Invite]({invite}) me to your server!"))
+
+    @commands.command()
+    async def feedback(self, ctx, *, feedback):
+        """
+        Send feedback about the bot.
+        ~
+        {prefix}feedback this bot is very good. absolutely amazing!
+        {prefix}feedback I have a command idea...
+        """
+        url = os.environ.get("FEEDBACK_WEBHOOK", None)
+        if url:
+            webhook = Webhook.from_url(url, adapter=RequestsWebhookAdapter())
+            embed = discord.Embed(description=feedback, colour=discord.Colour.teal())
+            embed.set_author(name=f"{ctx.author.name}#{ctx.author.discriminator}", icon_url=ctx.author.avatar_url)
+            embed.set_footer(text=f"User id: {ctx.author.id}")
+            webhook.send(embed=embed)
+        else:
+            await ctx.send(embed=embeds.error("This command is disabled."))
 
 
 def setup(bot):

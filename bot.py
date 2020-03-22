@@ -119,6 +119,8 @@ class ClipboardBot(commands.Bot):
             print("CommandNotFound: " + str(exception))
         elif isinstance(exception, commands.MissingRequiredArgument):
             await context.send(embed=embeds.error("Missing required arguments."))
+        elif isinstance(exception, commands.CommandOnCooldown):
+            await context.send(embed=embeds.error(f"This command is on cooldown. Try again in {exception.retry_after:.2f}s."))
         else:
             print("Unexpected exception: " + str(exception))
 

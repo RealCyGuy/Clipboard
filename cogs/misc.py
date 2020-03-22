@@ -116,6 +116,7 @@ class Misc(commands.Cog):
             description=f":mailbox_with_mail: [Invite]({invite}) me to your server!"))
 
     @commands.command()
+    @commands.cooldown(1, os.environ.get("FEEDBACK_COOLDOWN", 120), commands.BucketType.user)
     async def feedback(self, ctx, *, feedback):
         """
         Send feedback about the bot.

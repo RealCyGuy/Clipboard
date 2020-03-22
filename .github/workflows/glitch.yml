@@ -1,0 +1,12 @@
+name: Glitch.com 
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  push:
+    runs-on: [ubuntu-latest]
+    steps:
+    - uses: glitch-tools/sync-glitch-github-action@master
+

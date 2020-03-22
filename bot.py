@@ -20,10 +20,21 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+async def get_prefix(bot, message):
+    if message.guild is None:
+        prefix = os.environ.get("DEFAULT_PREFIX", "c!")
+    else:
+        config = await bot.get_config()
+        prefixes = config['prefixes']
+        prefix = prefixes.get(str(message.guild.id), os.environ.get("DEFAULT_PREFIX", "c!"))
+
+    return commands.when_mentioned_or(prefix)(bot, message)
+
+
 class ClipboardBot(commands.Bot):
     def __init__(self, *args, **kwargs):
         command_prefix = commands.when_mentioned_or("c!")
-        super().__init__(command_prefix=command_prefix, *args, **kwargs)
+        super().__init__(command_prefix=get_prefix, *args, **kwargs)
         self.loading_cogs = ["cogs.clipboard", "cogs.misc"]
         self.remove_command("help")
         self.activity = discord.Game("\u200b")
@@ -34,6 +45,7 @@ class ClipboardBot(commands.Bot):
 
         self.db = AsyncIOMotorClient(mongo_uri).clipboard_bot
         self.clipboard = self.db.clipboard
+        self.config = self.db.config
 
         self.startup()
 
@@ -47,6 +59,15 @@ class ClipboardBot(commands.Bot):
         print('-' * 24)
         print(f"{Signals.SUCCESS}I am logged in and ready!")
 
+    # async def on_guild_join(self, guild):
+    #     config = await self.get_config()
+    #     config["prefixes"][str(guild.id)] = "c!"
+    #     await self.clipboard.find_one_and_update(
+    #         {"_id": "config"},
+    #         {"$set": {"prefixes": config}},
+    #         upsert=True,
+    #     )
+
     async def get_clipboard(self):
         new_clipboard = await self.clipboard.find_one({"_id": "clipboard"})
         if new_clipboard is None:
@@ -57,6 +78,17 @@ class ClipboardBot(commands.Bot):
             )
             new_clipboard = await self.clipboard.find_one({"_id": "clipboard"})
         return new_clipboard
+
+    async def get_config(self):
+        new_config = await self.config.find_one({"_id": "config"})
+        if new_config is None:
+            await self.config.find_one_and_update(
+                {"_id": "config"},
+                {"$set": {"prefixes": dict()}},
+                upsert=True,
+            )
+            new_config = await self.config.find_one({"_id": "config"})
+        return new_config
 
     def startup(self):
         print('=' * 24)
@@ -97,7 +129,8 @@ async def status_update(the_bot):
         clip_db = await the_bot.get_clipboard()
 
         copied = len(clip_db["copied"])
-        text = f"{copied} copied to clipboard! Version {__version__} | c!help"
+        default_prefix = os.environ.get("DEFAULT_PREFIX", "c!")
+        text = f"{copied} copied to clipboard! Version {__version__} | {default_prefix}help"
 
         old_text = the_bot.guilds[0].me.activity.name
         if text != old_text:

@@ -51,7 +51,6 @@ class Misc(commands.Cog):
             visible_cog_commands = []
             for thecommand in cog:
                 visible_cog_commands.append(thecommand)
-            visible_cog_commands.sort(key=lambda x: x.name.lower())  # Sort alphabetically
             if len(visible_cog_commands) > 0:
                 runnable_commands.append(visible_cog_commands)
 

@@ -77,10 +77,12 @@ class Misc(commands.Cog):
             else:
                 aliases = "No aliases."
             help_embed.add_field(name="Aliases", value=aliases, inline=False)
-            help_embed.set_footer(text=f"Use {self.get_used_prefix(ctx)}help to see all the commands."+" "*30+"\u200b")
+            help_embed.set_footer(
+                text=f"Use {self.get_used_prefix(ctx)}help to see all the commands." + " " * 30 + "\u200b")
         for cog_commands in runnable_commands:
             value = '\n'.join(
-                [f"**{ctx.prefix}{command.qualified_name}** - *{command.short_doc.strip()}*" for command in cog_commands])
+                [f"**{ctx.prefix}{command.qualified_name}** - *{command.short_doc.strip()}*" for command in
+                 cog_commands])
             value = value.replace(" - **", "")
             help_embed.add_field(
                 name=cog_commands[0].cog_name,

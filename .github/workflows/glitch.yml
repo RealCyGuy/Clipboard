@@ -8,8 +8,9 @@ jobs:
   push:
     runs-on: [ubuntu-latest]
     steps:
-      - uses: glitch-tools/sync-glitch-github-action@master
-      - with: 
+      - name: glitch
+        uses: glitch-tools/sync-glitch-github-action@master
+        with: 
           GLITCH_TOKEN: ${{ secrets.GLITCH_TOKEN }}
           GLITCH_PROJECT_ID: ${{ secrets.GLITCH_TOKEN }}
 

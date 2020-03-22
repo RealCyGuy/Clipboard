@@ -131,6 +131,7 @@ class Misc(commands.Cog):
             embed.set_author(name=f"{ctx.author.name}#{ctx.author.discriminator}", icon_url=ctx.author.avatar_url)
             embed.set_footer(text=f"User id: {ctx.author.id}")
             webhook.send(embed=embed)
+            await ctx.send(embed=embeds.success("Sent the feedback!"))
         else:
             await ctx.send(embed=embeds.error("This command is disabled."))
 

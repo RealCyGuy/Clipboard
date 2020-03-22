@@ -43,8 +43,28 @@ class Clipboard(commands.Cog):
             embed.set_author(name=f"{ctx.author.name}#{ctx.author.discriminator}", icon_url=ctx.author.avatar_url)
         else:
             embed = embeds.error("You don't have anything copied to clipboard.")
-            embed.set_footer("Use c!help for more info.")
+            embed.set_footer(text="Use the help command for more info.")
         await ctx.send(embed=embed)
+
+    @commands.command()
+    async def clear(self, ctx):
+        """
+        Clear your clipboard!
+        ~
+        {prefix}clear
+        """
+        clipboard = await self.bot.get_clipboard()
+        copied = clipboard["copied"]
+        try:
+            copied.pop(str(ctx.author.id))
+            await self.bot.clipboard.find_one_and_update(
+                {"_id": "clipboard"},
+                {"$set": {"copied": copied}},
+                upsert=True,
+            )
+            await ctx.send(embed=embeds.success("Cleared clipboard."))
+        except KeyError:
+            await ctx.send(embed=embeds.error("Nothing in clipboard."))
 
 
 def setup(bot):

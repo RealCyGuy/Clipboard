@@ -21,19 +21,22 @@ load_dotenv()
 
 
 async def get_prefix(bot, message):
+    config = await bot.get_config()
+    prefixes = config['prefixes']
     if message.guild is None:
-        prefix = os.environ.get("DEFAULT_PREFIX", "c!")
+        prefix = []
+        for guild in bot.guilds:
+            if str(guild.id) in prefixes and message.author in guild.members:
+                prefix.append(prefixes[str(guild.id)])
+        prefix.append(os.environ.get("DEFAULT_PREFIX", "c!"))
     else:
-        config = await bot.get_config()
-        prefixes = config['prefixes']
         prefix = prefixes.get(str(message.guild.id), os.environ.get("DEFAULT_PREFIX", "c!"))
 
-    return commands.when_mentioned_or(prefix)(bot, message)
+    return commands.when_mentioned_or(*["c!", "bc!"])(bot, message)
 
 
 class ClipboardBot(commands.Bot):
     def __init__(self, *args, **kwargs):
-        command_prefix = commands.when_mentioned_or("c!")
         super().__init__(command_prefix=get_prefix, *args, **kwargs)
         self.loading_cogs = ["cogs.clipboard", "cogs.misc"]
         self.remove_command("help")

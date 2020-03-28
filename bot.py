@@ -29,18 +29,20 @@ async def get_prefix(bot, message):
             if str(guild.id) in prefixes and message.author in guild.members:
                 prefix.append(prefixes[str(guild.id)])
         prefix.append(os.environ.get("DEFAULT_PREFIX", "c!"))
+        prefix.append("")
+        return commands.when_mentioned_or(*prefix)(bot, message)
     else:
         prefix = prefixes.get(str(message.guild.id), os.environ.get("DEFAULT_PREFIX", "c!"))
-
-    return commands.when_mentioned_or(*["c!", "bc!"])(bot, message)
+        return commands.when_mentioned_or(prefix)(bot, message)
 
 
 class ClipboardBot(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(command_prefix=get_prefix, *args, **kwargs)
-        self.loading_cogs = ["cogs.clipboard", "cogs.misc"]
+        self.loading_cogs = ["cogs.clipboard", "cogs.settings", "cogs.misc"]
         self.remove_command("help")
-        self.activity = discord.Game("\u200b")
+        default_prefix = os.environ.get("DEFAULT_PREFIX", "c!")
+        self.activity = discord.Game(f"Version {__version__} | {default_prefix}help")
         mongo_uri = os.environ.get("MONGO_URI", None)
         if mongo_uri is None or len(mongo_uri.strip()) == 0:
             print("\n" + Signals.FATAL + "A Mongo URI is necessary for the bot to function.\n")
@@ -61,15 +63,6 @@ class ClipboardBot(commands.Bot):
         print(f"Bot version: {Fore.CYAN}{__version__}{Style.RESET_ALL}")
         print('-' * 24)
         print(f"{Signals.SUCCESS}I am logged in and ready!")
-
-    # async def on_guild_join(self, guild):
-    #     config = await self.get_config()
-    #     config["prefixes"][str(guild.id)] = "c!"
-    #     await self.clipboard.find_one_and_update(
-    #         {"_id": "config"},
-    #         {"$set": {"prefixes": config}},
-    #         upsert=True,
-    #     )
 
     async def get_clipboard(self):
         new_clipboard = await self.clipboard.find_one({"_id": "clipboard"})

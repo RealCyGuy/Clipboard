@@ -128,7 +128,7 @@ class ClipboardBot(commands.Bot):
             print("Unexpected exception: " + str(exception))
 
 
-@tasks.loop(seconds=1.0)
+@tasks.loop(minutes=2.0)
 async def status_update(the_bot):
     if the_bot.is_ready():
         clip_db = await the_bot.get_clipboard()

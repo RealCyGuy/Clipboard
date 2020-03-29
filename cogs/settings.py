@@ -15,7 +15,7 @@ class Settings(commands.Cog):
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def prefix(self, ctx, new_prefix=None):
         """
-        View and change the prefix
+        View and change the prefix.
         ~
         {prefix}prefix
         {prefix}prefix ?

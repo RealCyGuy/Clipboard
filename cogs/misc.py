@@ -29,7 +29,7 @@ class Misc(commands.Cog):
 
         # Get all the cogs
         if not command or command == "here":
-            cogs = self.bot.cogs.values()
+            cogs = [self.bot.get_cog("Clipboard"), self.bot.get_cog("Settings"), self.bot.get_cog("Misc")]
             cog_commands = [cog.get_commands() for cog in cogs]
 
         # Get the commands under a specific parent
@@ -53,9 +53,6 @@ class Misc(commands.Cog):
                 visible_cog_commands.append(thecommand)
             if len(visible_cog_commands) > 0:
                 runnable_commands.append(visible_cog_commands)
-
-        # Sort cogs list based on name
-        runnable_commands.sort(key=lambda x: x[0].cog_name.lower())
 
         # Make an embed
         help_embed = discord.Embed()

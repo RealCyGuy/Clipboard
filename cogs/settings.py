@@ -22,7 +22,7 @@ class Settings(commands.Cog):
         ~
         Use without param to view the prefix.
         """
-        if new_prefix:
+        if new_prefix is not None:
             if ctx.guild is None:
                 await ctx.send(embed=embeds.error("You can only change prefixes in a server."))
             else:
@@ -31,10 +31,11 @@ class Settings(commands.Cog):
                     if new_prefix not in [f'<@{user_id}>', f'<@!{user_id}>']:
                         if len(new_prefix) < 20:
                             config = await self.bot.get_config()
-                            config["prefixes"][str(ctx.guild.id)] = new_prefix
+                            prefixes = config["prefixes"]
+                            prefixes[str(ctx.guild.id)] = new_prefix
                             await self.bot.config.find_one_and_update(
                                 {"_id": "config"},
-                                {"$set": {"prefixes": config}},
+                                {"$set": {"prefixes": prefixes}},
                                 upsert=True,
                             )
                             embed = embeds.success(f"Changed prefix to `{new_prefix}`.")
@@ -53,7 +54,7 @@ class Settings(commands.Cog):
             embed.add_field(name="Default Prefix", value=default_prefix, inline=True)
 
             if ctx.guild is not None:
-                config = self.bot.get_config()
+                config = await self.bot.get_config()
                 server_prefix = config["prefixes"].get(str(ctx.guild.id), default_prefix)
                 embed.add_field(name="Server Prefix", value=server_prefix, inline=True)
 

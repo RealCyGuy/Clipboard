@@ -4,6 +4,7 @@ from discord.ext import commands
 import core.embeds as embeds
 
 import os
+from core.text import code
 
 
 class Settings(commands.Cog):
@@ -48,15 +49,22 @@ class Settings(commands.Cog):
                 else:
                     await ctx.send(embed=embeds.error("You need the `manage_guild` permission to do this."))
         else:
-            embed = discord.Embed(description=f"Command Prefixes", colour=discord.Colour.dark_magenta())
+            embed = discord.Embed(title=f"Command Prefixes", colour=discord.Colour.dark_magenta())
 
             default_prefix = os.environ.get("DEFAULT_PREFIX", "c!")
-            embed.add_field(name="Default Prefix", value=default_prefix, inline=True)
+            embed.add_field(name="Default Prefix", value=code(default_prefix), inline=True)
 
+            config = await self.bot.get_config()
+            prefixes = config["prefixes"]
             if ctx.guild is not None:
-                config = await self.bot.get_config()
-                server_prefix = config["prefixes"].get(str(ctx.guild.id), default_prefix)
-                embed.add_field(name="Server Prefix", value=server_prefix, inline=True)
+                server_prefix = prefixes.get(str(ctx.guild.id), default_prefix)
+                embed.add_field(name="Server Prefix", value=code(server_prefix), inline=True)
+
+            dm_prefixes = [code(default_prefix)]
+            for guild in self.bot.guilds:
+                if str(guild.id) in prefixes and ctx.author in guild.members:
+                    dm_prefixes.append(code(prefixes[str(guild.id)]))
+            embed.add_field(name=ctx.author.name + "'s DM prefixes.", value=", ".join(dm_prefixes))
 
             embed.set_footer(text="You can always mention me!")
             await ctx.send(embed=embed)

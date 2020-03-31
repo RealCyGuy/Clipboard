@@ -39,8 +39,6 @@ class ClipboardBot(commands.Bot):
         super().__init__(command_prefix=get_prefix, *args, **kwargs)
         self.loading_cogs = ["cogs.clipboard", "cogs.settings", "cogs.misc"]
         self.remove_command("help")
-        default_prefix = os.environ.get("DEFAULT_PREFIX", "c!")
-        self.activity = discord.Game(f"Version {__version__} | {default_prefix}help")
         mongo_uri = os.environ.get("MONGO_URI", None)
         if mongo_uri is None or len(mongo_uri.strip()) == 0:
             print("\n" + Signals.FATAL + "A Mongo URI is necessary for the bot to function.\n")
@@ -61,6 +59,7 @@ class ClipboardBot(commands.Bot):
         print(f"Bot version: {Fore.CYAN}{__version__}{Style.RESET_ALL}")
         print('-' * 24)
         print(f"{Signals.SUCCESS}I am logged in and ready!")
+        await change_status(self)
 
     async def get_clipboard(self):
         new_clipboard = await self.clipboard.find_one({"_id": "clipboard"})
@@ -114,7 +113,8 @@ class ClipboardBot(commands.Bot):
         elif isinstance(exception, commands.MissingRequiredArgument):
             await context.send(embed=embeds.error("Missing required arguments."))
         elif isinstance(exception, commands.CommandOnCooldown):
-            await context.send(embed=embeds.error(f"This command is on cooldown. Try again in {exception.retry_after:.2f}s."))
+            await context.send(
+                embed=embeds.error(f"This command is on cooldown. Try again in {exception.retry_after:.2f}s."))
         else:
             print("Unexpected exception: " + str(exception))
 
@@ -122,24 +122,29 @@ class ClipboardBot(commands.Bot):
 @tasks.loop(minutes=2.0)
 async def status_update(the_bot):
     if the_bot.is_ready():
-        clip_db = await the_bot.get_clipboard()
+        await change_status(the_bot)
 
-        copied = len(clip_db["copied"])
-        default_prefix = os.environ.get("DEFAULT_PREFIX", "c!")
-        text = f"{copied} copied to clipboard! Version {__version__} | {default_prefix}help"
 
-        old_text = the_bot.guilds[0].me.activity.name
-        if text != old_text:
-            print(Fore.CYAN + "=" * 24 + Fore.RESET)
-            print("Changing status to:")
-            print(Fore.MAGENTA + "-" * 24 + Fore.RESET)
-            print(f"Watching {text}")
-            print(Fore.CYAN + "=" * 24 + Fore.RESET)
-            try:
-                await the_bot.change_presence(activity=discord.Activity(name=text, type=discord.ActivityType.watching))
-                print(f"{Signals.SUCCESS}Changed status.")
-            except Exception as e:
-                print(f"{Signals.ERROR}Failed to update status: {type(e).__name__}")
+async def change_status(the_bot):
+    clip_db = await the_bot.get_clipboard()
+
+    copied = len(clip_db["copied"])
+    default_prefix = os.environ.get("DEFAULT_PREFIX", "c!")
+    servers = "{:,}".format(len(the_bot.guilds))
+    text = f"{default_prefix}help | {copied} copied | {servers} servers"
+
+    old_text = the_bot.guilds[0].me.activity.name
+    if text != old_text:
+        print(Fore.CYAN + "=" * 24 + Fore.RESET)
+        print("Changing status to:")
+        print(Fore.MAGENTA + "-" * 24 + Fore.RESET)
+        print(text)
+        print(Fore.CYAN + "=" * 24 + Fore.RESET)
+        try:
+            await the_bot.change_presence(activity=discord.Game(text))
+            print(f"{Signals.SUCCESS}Changed status.")
+        except Exception as e:
+            print(f"{Signals.ERROR}Failed to update status: {type(e).__name__}")
 
 
 bot = ClipboardBot()

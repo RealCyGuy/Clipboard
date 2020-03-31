@@ -4,11 +4,9 @@ import discord
 from discord.ext import commands
 from discord.ext import tasks
 
-import asyncio
 from motor.motor_asyncio import AsyncIOMotorClient
 
 import os
-import json
 import dns
 from colorama import Fore, Style
 

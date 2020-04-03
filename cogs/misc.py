@@ -55,7 +55,9 @@ class ClipboardHelpCommand(commands.HelpCommand):
             aliases = "No aliases."
         help_embed.add_field(name="Aliases", value=aliases, inline=False)
         help_embed.set_footer(
-            text=f"Use {self.clean_prefix}help to see all the commands." + " " * 30 + "\u200b")
+            text=f"Use {self.clean_prefix}help to see all the commands." +
+                 "\n" + "\u2501" * 40 + "\n" +
+                 "[]'s are optional arguments. <>'s are required arguments.")
         await self.get_destination().send(embed=help_embed)
 
     async def send_error_message(self, error):

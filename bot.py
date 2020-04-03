@@ -102,7 +102,6 @@ class ClipboardBot(commands.Bot):
 
             await context.trigger_typing()
             await context.send(embed=embeds.error(msg))
-
         elif isinstance(exception, commands.BadArgument):
             await context.trigger_typing()
             await context.send(
@@ -111,7 +110,7 @@ class ClipboardBot(commands.Bot):
         elif isinstance(exception, commands.CommandNotFound):
             print("CommandNotFound: " + str(exception))
         elif isinstance(exception, commands.MissingRequiredArgument):
-            await context.send(embed=embeds.error("Missing required arguments."))
+            await context.send_help(context.command)
         elif isinstance(exception, commands.CommandOnCooldown):
             await context.send(
                 embed=embeds.error(f"This command is on cooldown. Try again in {exception.retry_after:.2f}s."))

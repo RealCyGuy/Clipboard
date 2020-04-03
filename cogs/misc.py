@@ -1,106 +1,97 @@
+import os
+from difflib import get_close_matches
+
 import discord
 from discord import Webhook, RequestsWebhookAdapter
 from discord.ext import commands
 
 import core.embeds as embeds
 
-import os
+
+class ClipboardHelpCommand(commands.HelpCommand):
+    async def send_bot_help(self, mapping):
+        bot = self.context.bot
+
+        cogs = [bot.get_cog("Clipboard"), bot.get_cog("Settings"), bot.get_cog("Misc")]
+        cog_commands = [cog.get_commands() for cog in cogs]
+
+        help_embed = discord.Embed()
+        help_embed.set_author(name=bot.user, icon_url=bot.user.avatar_url)
+        help_embed.colour = 2228207
+        help_embed.set_footer(text=f"Use {self.clean_prefix}help [command] to get help for a specific command.")
+
+        for cog_command in cog_commands:
+            value = '\n'.join(
+                [f"**{self.clean_prefix}{command.qualified_name}** - *{command.short_doc.strip()}*" for command in
+                 cog_command])
+            value = value.replace(" - **", "")
+            help_embed.add_field(
+                name=cog_command[0].cog_name,
+                value=value
+            )
+        await self.get_destination().send(embed=help_embed)
+
+    async def send_command_help(self, command):
+        bot = self.context.bot
+
+        help_embed = discord.Embed()
+        help_embed.set_author(name=bot.user, icon_url=bot.user.avatar_url)
+        help_embed.colour = 2228207
+        help_embed.set_footer(text=f"Use {self.clean_prefix}help [command] to get help for a specific command.")
+
+        help_embed.title = f"{self.clean_prefix}{command.qualified_name} {command.signature}"
+        description = command.help.split("~")
+        help_embed.add_field(name="Description", value=description[0].replace("{prefix}", self.clean_prefix))
+        help_embed.add_field(name="Usage",
+                             value="```" + description[1].strip("\n ").replace("{prefix}", self.clean_prefix) + "```")
+        try:
+            help_embed.add_field(name="Note", value=description[2].replace("{prefix}", self.clean_prefix),
+                                 inline=False)
+        except IndexError:
+            pass
+        if command.aliases:
+            aliases = "`" + "`, `".join(command.aliases) + "`"
+        else:
+            aliases = "No aliases."
+        help_embed.add_field(name="Aliases", value=aliases, inline=False)
+        help_embed.set_footer(
+            text=f"Use {self.clean_prefix}help to see all the commands." + " " * 30 + "\u200b")
+        await self.get_destination().send(embed=help_embed)
+
+    async def send_error_message(self, error):
+        command = self.context.kwargs.get("command")
+        command_names = set()
+        for cmd in self.context.bot.walk_commands():
+            if not cmd.hidden:
+                command_names.add(cmd.qualified_name)
+        closest = get_close_matches(command, command_names, 2)
+        if closest:
+            closest = "` or `".join(closest)
+            await self.get_destination().send(embed=embeds.error(
+                f"Command `{command}` not found. Did you mean `{closest}`?"
+            ))
+        else:
+            await self.get_destination().send(embed=embeds.error(f"Command `{command}` not found."))
 
 
 class Misc(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.bot.help_command = ClipboardHelpCommand(
+            verify_checks=False,
+            command_attrs={
+                "help":
+                    """
+                    Shows this help message.
+                    ~
+                    {prefix}help
+                    {prefix}help invite
+                    """
+            },
+        )
+        self.bot.help_command.cog = self
 
-    def get_used_prefix(self, ctx):
-        if ctx.prefix == "<@!" + str(self.bot.user.id) + "> " or ctx.prefix == "<@" + str(self.bot.user.id) + "> ":
-            return "@" + self.bot.user.name + " "
-        else:
-            return ctx.prefix
-
-    @commands.command(aliases=['commands'])
-    async def help(self, ctx, *, command: str = None):
-        """
-        The new help command.
-        ~
-        {prefix}help\n{prefix}help copy
-        ~
-        Use `{prefix}help here` to send a list of commands into the channel (not DM).
-        """
-
-        # Get all the cogs
-        if not command or command == "here":
-            cogs = [self.bot.get_cog("Clipboard"), self.bot.get_cog("Settings"), self.bot.get_cog("Misc")]
-            cog_commands = [cog.get_commands() for cog in cogs]
-
-        # Get the commands under a specific parent
-        else:
-            command = command.lower().replace("c!", "")
-            got_command = self.bot.get_command(command)
-            if not got_command:
-                return await ctx.send(embed=embeds.error(f"The command `{command}` could not be found."))
-            base_command = got_command
-
-            if isinstance(got_command, commands.Group):
-                cog_commands = [list(set(got_command.walk_commands()))]
-            else:
-                cog_commands = []
-
-        # Check which commands are runnable
-        runnable_commands = []
-        for cog in cog_commands:
-            visible_cog_commands = []
-            for thecommand in cog:
-                visible_cog_commands.append(thecommand)
-            if len(visible_cog_commands) > 0:
-                runnable_commands.append(visible_cog_commands)
-
-        # Make an embed
-        help_embed = discord.Embed()
-        help_embed.set_author(name=self.bot.user, icon_url=self.bot.user.avatar_url)
-        help_embed.colour = 2228207
-        help_embed.set_footer(text=f"Use {self.get_used_prefix(ctx)}help <command> to get help for a specific command.")
-
-        # Add commands to it
-        if command and command != "here":
-            help_embed.title = f"{self.get_used_prefix(ctx)}{base_command.qualified_name} {base_command.signature}"
-            description = base_command.help.split("~")
-            help_embed.add_field(name="Description", value=description[0].replace("{prefix}", ctx.prefix))
-            help_embed.add_field(name="Usage",
-                                 value="```" + description[1].strip("\n ").replace("{prefix}", ctx.prefix) + "```")
-            try:
-                help_embed.add_field(name="Note", value=description[2].replace("{prefix}", ctx.prefix), inline=False)
-            except IndexError:
-                pass
-            if base_command.aliases:
-                aliases = "`" + "`, `".join(base_command.aliases) + "`"
-            else:
-                aliases = "No aliases."
-            help_embed.add_field(name="Aliases", value=aliases, inline=False)
-            help_embed.set_footer(
-                text=f"Use {self.get_used_prefix(ctx)}help to see all the commands." + " " * 30 + "\u200b")
-        for cog_commands in runnable_commands:
-            value = '\n'.join(
-                [f"**{ctx.prefix}{command.qualified_name}** - *{command.short_doc.strip()}*" for command in
-                 cog_commands])
-            value = value.replace(" - **", "")
-            help_embed.add_field(
-                name=cog_commands[0].cog_name,
-                value=value
-            )
-
-        if command:
-            await ctx.send(embed=help_embed)
-        else:
-            try:
-                await ctx.author.send(embed=help_embed)
-                if ctx.guild:
-                    await ctx.send(embed=embeds.success("Sent you a DM containing the help message!"))
-            except discord.Forbidden:
-                await ctx.send(embed=embeds.error("I don't have permissions to send you a DM."))
-            except:
-                await ctx.send(embed=embeds.error("I couldn't send you a DM."))
-
-    @commands.command(aliases=["botplzplzplz", "letmehavebot", "iwant"])
+    @commands.command(aliases=["givemebot"])
     async def invite(self, ctx):
         """
         Get the invite link of the bot.
@@ -118,7 +109,7 @@ class Misc(commands.Cog):
         """
         Send feedback about the bot.
         ~
-        {prefix}feedback this bot is very good. absolutely amazing!
+        {prefix}feedback this bot is very good.
         {prefix}feedback I have a command idea...
         """
         url = os.environ.get("FEEDBACK_WEBHOOK", None)

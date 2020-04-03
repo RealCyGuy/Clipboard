@@ -133,7 +133,14 @@ async def change_status(the_bot):
     servers = "{:,}".format(len(the_bot.guilds))
     text = f"{default_prefix}help | {copied} copied | {servers} servers"
 
-    old_text = the_bot.guilds[0].me.activity.name
+    old_text = ""
+    try:
+        old_text = the_bot.guilds[0].me.activity.name
+    except IndexError:
+        print("I'm in no servers.")
+    except AttributeError:
+        print("Booting up.")
+
     if text != old_text:
         print(Fore.CYAN + "=" * 24 + Fore.RESET)
         print("Changing status to:")

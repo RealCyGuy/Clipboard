@@ -67,13 +67,12 @@ class ClipboardHelpCommand(commands.HelpCommand):
             if not cmd.hidden:
                 command_names.add(cmd.qualified_name)
         closest = get_close_matches(command, command_names, 2)
-        if closest:
-            closest = "` or `".join(closest)
-            await self.get_destination().send(embed=embeds.error(
-                f"Command `{command}` not found. Did you mean `{closest}`?"
-            ))
-        else:
-            await self.get_destination().send(embed=embeds.error(f"Command `{command}` not found."))
+        if not closest:
+            closest = get_close_matches(command, command_names, 1, 0)
+        closest = "` or `".join(closest)
+        await self.get_destination().send(embed=embeds.error(
+            f"Command `{command}` not found. Did you mean `{closest}`?"
+        ))
 
 
 class Misc(commands.Cog):

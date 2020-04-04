@@ -124,6 +124,20 @@ class Misc(commands.Cog):
         else:
             await ctx.send(embed=embeds.error("This command is disabled."))
 
+    @commands.command()
+    async def ping(self, ctx):
+        """
+        Gives the pong!
+        ~
+        {prefix}ping
+        """
+        m = await ctx.send("One moment...")
+        t1 = ctx.message.created_at
+        t2 = m.created_at
+        rc = (t2 - t1).total_seconds()
+        emoji = '☠️' if rc > 50 else ('😭' if rc > 5 else ('😨' if rc > 1 else '👌'))
+        await m.edit(content="Pong! `{0:.3f}s` {1}\n".format(rc, emoji))
+
 
 def setup(bot):
     bot.add_cog(Misc(bot))

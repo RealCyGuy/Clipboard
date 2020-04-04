@@ -130,7 +130,7 @@ async def change_status(the_bot):
     copied = len(clip_db["copied"])
     default_prefix = os.environ.get("DEFAULT_PREFIX", "c!")
     servers = "{:,}".format(len(the_bot.guilds))
-    text = f"{default_prefix}help | {copied} copied | {servers} servers"
+    text = f"{default_prefix}help | {copied} copied | {servers} servers | v{__version__}"
 
     old_text = ""
     try:
